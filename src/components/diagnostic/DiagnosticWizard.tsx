@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { ProgressSteps } from "@/components/ui/Badge";
 import { Honeypot } from "@/components/ui/Honeypot";
-import { Wordmark } from "@/components/brand/Wordmark";
+import { Logo } from "@/components/brand/Logo";
 import { LivePreview } from "./LivePreview";
 import { ResultView } from "./ResultView";
 import { initialWizardState, type WizardState } from "./types";
@@ -140,9 +140,9 @@ function Intro({ onStart }: { onStart: () => void }) {
 
 function TopBar({ step }: { step: number }) {
   return (
-    <div className="flex items-center justify-between px-6 py-5 border-b border-[#E4E7EC]">
+    <div className="flex items-center justify-between px-6 py-4 border-b border-[#E4E7EC]">
       <Link href="/">
-        <Wordmark dark={false} />
+        <Logo fill="#0A0A0A" width={120} />
       </Link>
       <ProgressSteps step={step} total={5} />
     </div>

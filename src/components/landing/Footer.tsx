@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Wordmark } from "@/components/brand/Wordmark";
+import { Logo } from "@/components/brand/Logo";
 
 export function Footer() {
   return (
     <footer className="bg-surface-0 border-t border-[#E4E7EC] py-10 px-6 lg:px-10">
       <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
-          <Wordmark dark={false} />
+          <Logo fill="#0A0A0A" width={130} />
           <div className="font-text text-[13px] text-text-low mt-2">
             Performance marketing.
           </div>

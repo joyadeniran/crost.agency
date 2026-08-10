@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Wordmark } from "@/components/brand/Wordmark";
+import { Logo } from "@/components/brand/Logo";
 
 export function Nav() {
   return (
-    <div className="flex items-center justify-between px-6 lg:px-10 py-6 relative z-10">
+    <div className="flex items-center justify-between px-6 lg:px-10 py-5 relative z-10">
       <Link href="/">
-        <Wordmark dark />
+        <Logo fill="#FFFFFF" width={130} />
       </Link>
       <div className="flex items-center gap-3">
         <Link
