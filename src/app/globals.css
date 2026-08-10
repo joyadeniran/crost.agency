@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/*
+ * Crost Brand System v2.0 tokens — mirrors the values documented in
+ * "Crost Brand System.dc.html" pages 05–08 and 12–15 exactly. Nothing in
+ * this app should introduce a color, radius, shadow or type size that
+ * isn't traceable back to this block.
+ */
+:root {
+  /* brand */
+  --crost-pink: #ff40d8;
+  --crost-pink-700: #a6008c; /* pink text-on-white, passes AA at body size */
+  --crost-violet: #6a2cff;
+  --crost-violet-inv: #b79cff; /* violet text on dark */
+  --crost-black: #0a0a0a;
+  --crost-navy: #08002b;
+
+  /* surface */
+  --surface-0: #ffffff;
+  --surface-1: #f2f4f7;
+  --surface-2: #ffe6f7;
+  --surface-inv-0: #0a0a0a;
+  --surface-inv-1: #131318;
+  --surface-inv-2: #1c1c22;
+
+  /* text */
+  --text-hi: #0a0a0a;
+  --text-mid: #5a5f68;
+  --text-low: #8a8f98;
+  --text-inv-hi: #ffffff;
+  --text-inv-mid: #c9c9d1;
+  --text-inv-low: #8a8a93;
+
+  /* semantic */
+  --success: #0fa36b;
+  --warning: #f5a524;
+  --danger: #e0245e;
+  --info: #2c7bff;
+
+  /* effects */
+  --grad-brand: linear-gradient(115deg, #ff40d8, #a64cff);
+  --glow-sm: 0 0 16px rgba(255, 64, 216, 0.4);
+  --glow-md: 0 0 32px rgba(255, 64, 216, 0.45);
+  --glow-lg: 0 0 64px rgba(255, 64, 216, 0.55);
+
+  /* radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-img: 14px;
+  --r-lg: 24px;
+  --r-full: 999px;
+
+  /* spacing (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --container-max: 1200px;
+  --gutter: 24px;
+
+  /* motion */
+  --dur-instant: 100ms;
+  --dur-quick: 180ms;
+  --dur-base: 260ms;
+  --dur-panel: 380ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --background: var(--surface-0);
+  --foreground: var(--text-hi);
+}
+
+@theme inline {
+  --color-crost-pink: var(--crost-pink);
+  --color-crost-pink-700: var(--crost-pink-700);
+  --color-crost-violet: var(--crost-violet);
+  --color-crost-violet-inv: var(--crost-violet-inv);
+  --color-crost-black: var(--crost-black);
+  --color-crost-navy: var(--crost-navy);
+
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-inv-0: var(--surface-inv-0);
+  --color-surface-inv-1: var(--surface-inv-1);
+  --color-surface-inv-2: var(--surface-inv-2);
+
+  --color-text-hi: var(--text-hi);
+  --color-text-mid: var(--text-mid);
+  --color-text-low: var(--text-low);
+  --color-text-inv-hi: var(--text-inv-hi);
+  --color-text-inv-mid: var(--text-inv-mid);
+  --color-text-inv-low: var(--text-inv-low);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-display: var(--font-fredoka), var(--font-outfit), sans-serif;
+  --font-text: var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), monospace;
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-img: var(--r-img);
+  --radius-lg: var(--r-lg);
+  --radius-full: var(--r-full);
+}
+
+/*
+ * Everything below is wrapped in @layer base so Tailwind utility classes
+ * (e.g. text-white on a <Link>) still win over these defaults — plain
+ * unlayered rules would otherwise always beat utilities regardless of
+ * specificity, which is a known Tailwind v4 footgun.
+ */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--crost-pink);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--crost-violet);
+  }
+}
+
+::selection {
+  background: var(--crost-pink);
+  color: var(--crost-black);
+}
+
+/* Focus ring: 2px pink at 2px offset, on light and dark alike — never removed. */
+:focus-visible {
+  outline: 2px solid var(--crost-pink);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+@keyframes crostOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 120ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 120ms !important;
+  }
+}
