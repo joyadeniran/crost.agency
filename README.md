@@ -7,13 +7,13 @@ for what's shipped.
 ## Stack
 
 Next.js (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres) ·
-Resend · Claude (AI narrative, server-side only)
+Resend · Gemini (AI narrative, server-side only)
 
 ## Getting started
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in Supabase / Resend / Anthropic keys
+cp .env.example .env.local   # fill in Supabase / Resend / Gemini keys
 npm run dev
 ```
 
@@ -39,7 +39,7 @@ Every integration degrades honestly rather than pretending:
 | Missing | What happens |
 |---|---|
 | `RESEND_API_KEY` | Emails are logged to the server console instead of sent. Everything else completes, and the results screen only promises an email when one actually went out. |
-| `ANTHROPIC_API_KEY` | The narrative falls back to a deterministic template. Never a fabricated "AI" response. |
+| `GEMINI_API_KEY` | The narrative falls back to a deterministic template. Never a fabricated "AI" response. Same fallback if Gemini blocks or truncates the response. |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | `/api/diagnostic` and `/api/apply` return a deliberate 503 with an actionable message. Pages still render. |
 | `NEXT_PUBLIC_SITE_URL` | Falls back to the Vercel deployment URL, then `http://localhost:3000`. Only needed for a custom production domain, but absolute links in emails depend on it. |
 

@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, ThinkingLevel, FinishReason } from "@google/genai";
 import type { DiagnosticResult, GoalType } from "@/lib/calc/types";
 import { formatCount, formatRatio, formatTimeframe, formatUsd } from "@/lib/calc/format";
 
@@ -6,8 +6,8 @@ import { formatCount, formatRatio, formatTimeframe, formatUsd } from "@/lib/calc
  * Deliberately narrow: this is the ONLY shape of data the model ever sees.
  * No raw form inputs, no ability to see or touch the calculation — it can
  * only phrase numbers that were already computed by engine.ts. If this
- * function's input type ever grows to include raw inputs, that's a sign
- * the isolation boundary the brief asked for is being violated.
+ * interface ever grows to include raw inputs, that's a sign the isolation
+ * boundary the brief asked for is being violated. See SPEC section 3.4.
  */
 interface NarrativeFacts {
   goalType: GoalType;
@@ -19,6 +19,12 @@ interface NarrativeFacts {
   /** False when the engine could not price the target at all. */
   priceable: boolean;
 }
+
+/**
+ * Overridable so the model can be swapped without a deploy of this file —
+ * the default is a preview model, and preview models get superseded.
+ */
+const MODEL = process.env.GEMINI_MODEL?.trim() || "gemini-3-flash-preview";
 
 function factsFromResult(
   goalType: GoalType,
@@ -67,7 +73,7 @@ function templatedFallback(facts: NarrativeFacts): string {
   ].join(" ");
 }
 
-const SYSTEM_PROMPT = `You write a short, plain-English summary for a marketing-agency growth diagnostic.
+const SYSTEM_INSTRUCTION = `You write a short, plain-English summary for a marketing-agency growth diagnostic.
 
 You are given ONLY already-computed facts. Do not calculate, estimate, or invent any number that is not in the facts you are given. If a value is "—" it is unknown; say it is unknown rather than substituting a figure.
 
@@ -80,7 +86,34 @@ Write exactly 2-3 sentences. State the target and the monthly media figure, then
 
 End by noting that a Crost strategist validates every target before any commitment.
 
-Output only the summary text, with no preamble, heading, or quotation marks.`;
+Output only the summary text as plain prose. No preamble, no heading, no markdown, no quotation marks.`;
+
+/**
+ * Thinking depth, matched to the configured model.
+ *
+ * This is derived rather than hardcoded because the parameters are not
+ * interchangeable across model families: `thinkingLevel` belongs to Gemini 3,
+ * `thinkingBudget` to Gemini 2.5, and MINIMAL is Gemini 3 Flash only. Sending
+ * the wrong one is a 400 — which this module would swallow into the template
+ * fallback, so the AI narrative would quietly stop working with nothing in the
+ * UI to show for it. Anything unrecognised gets no thinking config at all.
+ */
+function thinkingConfigFor(model: string) {
+  if (model.startsWith("gemini-3-flash")) {
+    // Two or three sentences over a fixed set of facts needs no deliberation,
+    // and this call sits inside a form submit the prospect is waiting on.
+    return { thinkingLevel: ThinkingLevel.MINIMAL };
+  }
+  if (model.startsWith("gemini-3")) {
+    return { thinkingLevel: ThinkingLevel.LOW };
+  }
+  if (model.startsWith("gemini-2.5-flash")) {
+    return { thinkingBudget: 0 };
+  }
+  // gemini-2.5-pro cannot disable thinking, and older models reject the
+  // parameter outright.
+  return undefined;
+}
 
 export async function generateNarrative(
   goalType: GoalType,
@@ -88,45 +121,42 @@ export async function generateNarrative(
   result: DiagnosticResult
 ): Promise<string> {
   const facts = factsFromResult(goalType, timeframeDays, result);
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     return templatedFallback(facts);
   }
 
-  const anthropic = new Anthropic({ apiKey });
-
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 1000,
-      system: SYSTEM_PROMPT,
-      // Two or three sentences over a fixed set of facts needs no deliberation.
-      // Low effort keeps this well inside the request budget of a form submit,
-      // which is the latency the prospect actually feels.
-      output_config: { effort: "low" },
-      messages: [
-        {
-          role: "user",
-          content: `Facts:\n${JSON.stringify(facts, null, 2)}`,
-        },
-      ],
+    const ai = new GoogleGenAI({ apiKey });
+    const thinkingConfig = thinkingConfigFor(MODEL);
+
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: `Facts:\n${JSON.stringify(facts, null, 2)}`,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        ...(thinkingConfig ? { thinkingConfig } : {}),
+      },
     });
 
-    // A safety decline arrives as a normal 200 with an empty content array —
-    // reading content[0] without this check throws on an otherwise fine request.
-    if (message.stop_reason === "refusal") {
-      console.warn("AI narrative declined by safety classifier, using template");
+    // A blocked prompt or a candidate stopped for safety both come back as a
+    // successful call with no usable text, so `response.text` has to be
+    // checked rather than assumed.
+    if (response.promptFeedback?.blockReason) {
+      console.warn(
+        `Gemini blocked the narrative prompt (${response.promptFeedback.blockReason}); using template`
+      );
       return templatedFallback(facts);
     }
 
-    const text = message.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b.type === "text" ? b.text : ""))
-      .join("")
-      .trim();
+    const finishReason = response.candidates?.[0]?.finishReason;
+    if (finishReason && finishReason !== FinishReason.STOP) {
+      console.warn(`Gemini narrative ended as ${finishReason}; using template`);
+      return templatedFallback(facts);
+    }
 
-    return text || templatedFallback(facts);
+    return response.text?.trim() || templatedFallback(facts);
   } catch (err) {
     console.error("AI narrative generation failed, using template fallback", err);
     return templatedFallback(facts);

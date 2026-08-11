@@ -91,8 +91,22 @@ design system.
   they are now named tokens in `globals.css`.
 - **Email is asked for once.** It was required on step 1 and again on the step-5
   "email gate", so people typed it twice.
-- The AI narrative runs on `claude-opus-5`, with a system prompt separated from
-  the facts payload and explicit handling for a safety refusal.
+- **The AI narrative runs on Gemini** (`@google/genai`), replacing Anthropic —
+  `gemini-3-flash-preview` by default, overridable with `GEMINI_MODEL`, keyed on
+  `GEMINI_API_KEY`. The `@anthropic-ai/sdk` dependency is removed.
+
+  The isolation boundary the spec requires is unchanged: the model still
+  receives only the narrow `NarrativeFacts` shape — already-computed outputs,
+  never raw form inputs — and still cannot alter a number.
+
+  Two provider-specific hazards are handled explicitly. Gemini returns a
+  blocked prompt, a non-`STOP` finish reason and an empty response as
+  *successful* calls with no usable text, so all three are checked rather than
+  assumed. And thinking depth is derived from the configured model family
+  rather than hardcoded, because the parameters aren't interchangeable
+  (`thinkingLevel` is Gemini 3, `thinkingBudget` is Gemini 2.5, `MINIMAL` is
+  Gemini 3 Flash only) — sending the wrong one is a 400 this module would
+  swallow into the template fallback, silently disabling the narrative.
 - Copy across the landing page, wizard and application: the guarantee now
   states plainly that the performance fee is *refunded*, and that media spend
   is not covered.

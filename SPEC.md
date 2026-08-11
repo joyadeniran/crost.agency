@@ -112,7 +112,7 @@ entirely of em dashes. Historical `v1` rows are never recomputed.
 
 ### 3.4 AI narrative — strictly downstream
 
-The AI (Claude, server-side only) receives **only the already-computed
+The AI (Gemini, server-side only) receives **only the already-computed
 outputs** — never raw form inputs, never the ability to alter a number. See
 `src/lib/ai/narrative.ts`: the input type is a deliberately narrow
 `NarrativeFacts` shape. If that type ever grows to include raw inputs, the
@@ -121,10 +121,17 @@ isolation this spec requires has been broken.
 The facts object includes `priceable`, so the narrative for an unpriceable
 target says the target can't be priced rather than narrating around blanks.
 
-Without an `ANTHROPIC_API_KEY`, a deterministic templated summary is used
-instead — never a fabricated "AI" response. A safety refusal from the model
-(returned as a normal 200 with `stop_reason: "refusal"`) falls back the same
-way.
+Without a `GEMINI_API_KEY`, a deterministic templated summary is used
+instead — never a fabricated "AI" response. The same fallback covers a blocked
+prompt, a candidate that stops for any reason other than `STOP`, and an empty
+response: all three arrive as successful calls with no usable text, so the
+result is checked rather than assumed.
+
+The model is `gemini-3-flash-preview`, overridable via `GEMINI_MODEL`. Thinking
+depth is derived from the configured model family rather than hardcoded —
+`thinkingLevel` is Gemini 3, `thinkingBudget` is Gemini 2.5, and `MINIMAL` is
+Gemini 3 Flash only. Sending the wrong one is a 400, which this module would
+swallow into the fallback, so the narrative would silently stop working.
 
 ## 4. The guarantee
 
@@ -185,8 +192,8 @@ instead of silently failing, template instead of fabricating) — see
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` — required for any of this to
   persist data.
 - `RESEND_API_KEY` — required for actual email delivery.
-- `ANTHROPIC_API_KEY` — required for the AI narrative; falls back to a
-  templated summary without it.
+- `GEMINI_API_KEY` — required for the AI narrative; falls back to a
+  templated summary without it. `GEMINI_MODEL` optionally overrides the model.
 
 Bot protection is a honeypot field plus a minimum-time-on-form check plus
 Supabase-backed IP rate limiting (`src/lib/security/`) — no third-party
