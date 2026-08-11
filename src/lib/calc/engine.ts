@@ -5,14 +5,20 @@ import type {
   DiagnosticOutputs,
   CacSource,
   Confidence,
+  MissingInput,
 } from "./types";
 
 /**
  * Bump this whenever the formula changes. Stored on every diagnostic_submissions
  * row so a calculation can always be reproduced against the rules that produced
  * it, even after the engine evolves — never recompute historical rows.
+ *
+ * v2: confidence is no longer scored purely on which inputs arrived. A result
+ * that cannot be priced (most commonly a ROAS goal with no stated ad spend, so
+ * there is no base for the multiple to apply to) is now NEEDS_MORE_DATA rather
+ * than HIGH-confidence-with-no-numbers. See SPEC 3.3.
  */
-export const FORMULA_VERSION = "v1";
+export const FORMULA_VERSION = "v2";
 
 function resolveCac(inputs: DiagnosticInputs): {
   source: CacSource;
@@ -64,9 +70,11 @@ function resolveTargets(
     return { targetCustomers, revenueTarget };
   }
 
-  // roas: target value is a multiple (e.g. 3.5), applied against stated monthly ad spend.
+  // roas: target value is a multiple (e.g. 3.5), applied against stated monthly
+  // ad spend. With no stated spend there is nothing for the multiple to act on,
+  // so the revenue target is genuinely unknowable rather than zero.
   const revenueTarget =
-    inputs.monthlyAdSpend !== null
+    inputs.monthlyAdSpend !== null && inputs.monthlyAdSpend > 0
       ? inputs.monthlyAdSpend * inputs.targetValue * months
       : null;
   const targetCustomers =
@@ -74,7 +82,51 @@ function resolveTargets(
   return { targetCustomers, revenueTarget };
 }
 
-function scoreConfidence(derived: DerivedMetrics, inputs: DiagnosticInputs): Confidence {
+/**
+ * What the prospect would need to supply to move the result forward, ordered by
+ * how much it unlocks. Only surfaced when something is actually missing.
+ */
+function collectMissing(
+  inputs: DiagnosticInputs,
+  derived: DerivedMetrics
+): MissingInput[] {
+  const missing: MissingInput[] = [];
+
+  if (derived.resolvedCac === null) {
+    // Either of these paths resolves CAC, so both are worth asking for.
+    missing.push("cac");
+    if (inputs.monthlyAdSpend === null || inputs.monthlyAdSpend <= 0) {
+      missing.push("monthlyAdSpend");
+    }
+    if (
+      inputs.monthlyCustomersAcquired === null ||
+      inputs.monthlyCustomersAcquired <= 0
+    ) {
+      missing.push("monthlyCustomersAcquired");
+    }
+  } else if (
+    inputs.goalType === "roas" &&
+    (inputs.monthlyAdSpend === null || inputs.monthlyAdSpend <= 0)
+  ) {
+    // A ROAS goal is a multiple of spend; without the spend there's no target.
+    missing.push("monthlyAdSpend");
+  }
+
+  if (inputs.aovLtv === null || inputs.aovLtv <= 0) missing.push("aovLtv");
+  if (inputs.grossMarginPct === null) missing.push("grossMarginPct");
+
+  return missing;
+}
+
+function scoreConfidence(
+  derived: DerivedMetrics,
+  inputs: DiagnosticInputs,
+  priceable: boolean
+): Confidence {
+  // A target we can't put a media figure against is not a low-confidence
+  // answer, it's an absent one. Saying so is the whole point of the diagnostic.
+  if (!priceable) return "NEEDS_MORE_DATA";
+
   if (
     derived.cacSource === "provided" &&
     inputs.aovLtv !== null &&
@@ -141,10 +193,14 @@ export function computeDiagnostic(inputs: DiagnosticInputs): DiagnosticResult {
     expectedCustomersFromCurrentSpend,
   };
 
+  const priceable = estimatedMonthlyMediaRequired !== null;
+
   return {
     formulaVersion: FORMULA_VERSION,
     derivedMetrics,
     outputs,
-    confidence: scoreConfidence(derivedMetrics, inputs),
+    confidence: scoreConfidence(derivedMetrics, inputs, priceable),
+    priceable,
+    missing: collectMissing(inputs, derivedMetrics),
   };
 }

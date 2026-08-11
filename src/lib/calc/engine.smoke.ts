@@ -94,5 +94,47 @@ const d = computeDiagnostic({
 assertClose("revenueTarget", d.outputs.revenueTarget, 35000);
 assertClose("targetCustomers", d.outputs.targetCustomers, 291.67);
 console.log(`  ok  revenueTarget=${formatUsd(d.outputs.revenueTarget)} targetCustomers=${d.outputs.targetCustomers?.toFixed(1)}`);
+if (!d.priceable) throw new Error("Example D should be priceable");
+
+// Regression (v2): a ROAS goal is a multiple applied to stated ad spend. With no
+// spend there is nothing to multiply, so every money figure is null. Before v2
+// this still scored HIGH — a confident-looking result made entirely of em
+// dashes. It must now report NEEDS_MORE_DATA and name the missing input.
+console.log("\nExample E — ROAS goal with no stated ad spend (regression)");
+const e = computeDiagnostic({
+  monthlyAdSpend: null,
+  cac: 25,
+  monthlyCustomersAcquired: null,
+  aovLtv: 120,
+  grossMarginPct: 55,
+  monthlyVisitors: null,
+  conversionRatePct: null,
+  goalType: "roas",
+  targetValue: 3.5,
+  timeframeDays: 90,
+});
+if (e.outputs.revenueTarget !== null)
+  throw new Error("must not invent a revenue target without ad spend");
+if (e.outputs.estimatedMonthlyMediaRequired !== null)
+  throw new Error("must not invent a media requirement without ad spend");
+if (e.priceable) throw new Error("priceable: expected false");
+if (e.confidence !== "NEEDS_MORE_DATA")
+  throw new Error(`confidence: expected NEEDS_MORE_DATA, got ${e.confidence}`);
+if (!e.missing.includes("monthlyAdSpend"))
+  throw new Error(`missing should name monthlyAdSpend, got [${e.missing.join(", ")}]`);
+console.log(`  ok  confidence = ${e.confidence}, priceable = ${e.priceable}`);
+console.log(`  ok  missing = [${e.missing.join(", ")}]`);
+
+// The fully-specified case should report nothing missing, so the UI never shows
+// a "what we still need" panel to someone who gave us everything.
+console.log("\nExample F — complete inputs report nothing missing");
+if (a.missing.length !== 0)
+  throw new Error(`Example A should have no missing inputs, got [${a.missing.join(", ")}]`);
+if (!a.priceable) throw new Error("Example A should be priceable");
+if (!b.missing.includes("grossMarginPct"))
+  throw new Error("Example B withheld margin, so missing should name it");
+if (!c.missing.includes("cac"))
+  throw new Error("Example C has no resolvable CAC, so missing should name it");
+console.log("  ok  missing[] tracks exactly the withheld inputs");
 
 console.log("\nAll engine smoke tests passed.");

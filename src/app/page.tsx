@@ -19,16 +19,18 @@ export default function Home() {
         <Nav />
         <Hero />
       </div>
-      <Proposition />
-      <Difference />
-      <Bet />
-      <Process />
-      <DiagnosticCta />
-      <DiagnosticPreview />
-      <AiSection />
-      <WhoFor />
-      <WhoNotFor />
-      <FinalCta />
+      <main id="main">
+        <Proposition />
+        <Difference />
+        <Bet />
+        <Process />
+        <DiagnosticCta />
+        <DiagnosticPreview />
+        <AiSection />
+        <WhoFor />
+        <WhoNotFor />
+        <FinalCta />
+      </main>
       <Footer />
     </div>
   );
