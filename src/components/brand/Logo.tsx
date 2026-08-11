@@ -10,13 +10,26 @@
  * sits safely above the documented 120px minimum lockup width (below that,
  * the sparkle closes up and the orbit stroke breaks).
  */
+/**
+ * `tone` rather than a raw colour: the lockup is a masked shape, so its colour
+ * is a CSS background rather than a class, and every call site was passing a
+ * hand-written hex. Mapping the two legitimate treatments to tokens keeps the
+ * "no colour outside the system" rule true here too.
+ */
+const TONE_FILL = {
+  dark: "var(--crost-black)", // on light surfaces
+  light: "var(--text-inv-hi)", // on the near-black surfaces
+  pink: "var(--crost-pink)",
+} as const;
+
 export function Logo({
-  fill = "#0A0A0A",
+  tone = "dark",
   width = 130,
 }: {
-  fill?: string;
+  tone?: keyof typeof TONE_FILL;
   width?: number;
 }) {
+  const fill = TONE_FILL[tone];
   const height = Math.round(width * (746 / 1163));
   return (
     <span

@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the example file is documentation, not a secret, and the README and
+# SPEC both point at it. The blanket .env* rule above is why it silently never
+# made it into the repo.
+!.env.example
 
 # vercel
 .vercel

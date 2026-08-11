@@ -37,11 +37,42 @@
   --danger: #e0245e;
   --info: #2c7bff;
 
+  /*
+   * Semantic pairs for status chips — the tint/ink pairs derived from the
+   * semantic hues above. Every status surface in the app uses these; no
+   * component should hand-mix a status colour.
+   */
+  --success-tint: #e7f7f0;
+  --success-ink: #0a7a50;
+  --warning-tint: #fef4e1;
+  --warning-ink: #9a6400;
+  --danger-tint: #fde8ee;
+  --danger-ink: #b01643;
+
+  /*
+   * Line and interaction values. These were previously inlined as raw hex in
+   * a dozen components; naming them is what makes "no colour outside the
+   * system" checkable rather than aspirational.
+   */
+  --border-subtle: #e4e7ec; /* hairlines, card edges on light */
+  --border-field: #d6dae1; /* resting input border */
+  --border-inv: #24242b; /* hairlines on dark */
+  --surface-inv-3: #0f0f14; /* inset panel on near-black */
+  --border-inv-field: #3a3a42; /* resting input border on dark */
+  --text-placeholder: #9aa0a8;
+  --text-placeholder-inv: #6a6a73;
+  --text-disabled: #b0b5bd;
+  --pink-hover: #d920af; /* pink pressed/hover, keeps AA on black text */
+  --pink-disabled: #ffd6f4;
+  --pink-disabled-ink: #b58fa9;
+  --grad-brand-end: #a64cff;
+
   /* effects */
   --grad-brand: linear-gradient(115deg, #ff40d8, #a64cff);
   --glow-sm: 0 0 16px rgba(255, 64, 216, 0.4);
   --glow-md: 0 0 32px rgba(255, 64, 216, 0.45);
   --glow-lg: 0 0 64px rgba(255, 64, 216, 0.55);
+  --ring-pink: 0 0 0 3px rgba(255, 64, 216, 0.18);
 
   /* radius */
   --r-sm: 8px;
@@ -102,6 +133,25 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
 
+  --color-success-tint: var(--success-tint);
+  --color-success-ink: var(--success-ink);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger-tint: var(--danger-tint);
+  --color-danger-ink: var(--danger-ink);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-field: var(--border-field);
+  --color-border-inv: var(--border-inv);
+  --color-border-inv-field: var(--border-inv-field);
+  --color-surface-inv-3: var(--surface-inv-3);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-placeholder-inv: var(--text-placeholder-inv);
+  --color-text-disabled: var(--text-disabled);
+  --color-pink-hover: var(--pink-hover);
+  --color-pink-disabled: var(--pink-disabled);
+  --color-pink-disabled-ink: var(--pink-disabled-ink);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
@@ -143,6 +193,41 @@
   }
 }
 
+@layer components {
+  /*
+   * The brand gradient used on primary CTAs. Defined once here rather than
+   * being re-typed as an arbitrary `bg-[linear-gradient(...)]` value at each
+   * call site, which is how the two ends previously drifted out of sync with
+   * the --grad-brand token.
+   */
+  .bg-grad-brand {
+    background-image: var(--grad-brand);
+  }
+
+  /* Visible only when focused — the keyboard entry point to main content. */
+  .skip-link {
+    position: absolute;
+    left: var(--s-4);
+    top: calc(-1 * var(--s-9));
+    z-index: 100;
+    display: inline-flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 var(--s-5);
+    border-radius: var(--r-md);
+    background: var(--crost-pink);
+    color: var(--crost-black);
+    font-family: var(--font-text);
+    font-weight: 600;
+    font-size: 14px;
+    transition: top var(--dur-quick) var(--ease-out);
+  }
+  .skip-link:focus-visible {
+    top: var(--s-4);
+    color: var(--crost-black);
+  }
+}
+
 ::selection {
   background: var(--crost-pink);
   color: var(--crost-black);
@@ -171,5 +256,14 @@
     animation-duration: 120ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 120ms !important;
+  }
+
+  /*
+   * Purely decorative loops (the orbiting mark, the rotating hero stat) are
+   * stopped outright rather than collapsed to a 120ms run — a single fast
+   * spin is exactly the motion the preference asks us not to produce.
+   */
+  [data-motion="decorative"] {
+    animation: none !important;
   }
 }

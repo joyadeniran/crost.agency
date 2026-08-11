@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:engine": "tsx src/lib/calc/engine.smoke.ts"
+    "test:engine": "tsx src/lib/calc/engine.smoke.ts",
+    "verify": "npm run lint && npm run test:engine && npm run build"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.116.0",
+    "@google/genai": "^2.16.0",
     "@supabase/supabase-js": "^2.112.2",
     "next": "16.3.0",
     "react": "19.2.8",

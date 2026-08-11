@@ -1,41 +1,84 @@
-export function ProgressSteps({ step, total }: { step: number; total: number }) {
+import type { Confidence } from "@/lib/calc/types";
+import { CONFIDENCE_LABEL } from "@/lib/calc/format";
+
+export function ProgressSteps({
+  step,
+  total,
+  className = "",
+}: {
+  step: number;
+  total: number;
+  className?: string;
+}) {
+  const pct = Math.min(Math.max(step / total, 0), 1) * 100;
+  const complete = step >= total;
+
   return (
-    <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] text-text-low">
-      <span className="text-crost-pink font-medium">
-        {String(step).padStart(2, "0")}
+    <div
+      className={`flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] text-text-low ${className}`}
+      role="group"
+      aria-label={complete ? "Diagnostic complete" : `Step ${step} of ${total}`}
+    >
+      <span aria-hidden="true" className="text-crost-pink font-medium">
+        {String(Math.min(step, total)).padStart(2, "0")}
       </span>
-      <span>/</span>
-      <span>{String(total).padStart(2, "0")}</span>
-      <div className="ml-2 h-[3px] w-24 rounded-full bg-[#E4E7EC] overflow-hidden">
+      <span aria-hidden="true">/</span>
+      <span aria-hidden="true">{String(total).padStart(2, "0")}</span>
+      <div
+        className="ml-2 h-[3px] w-16 sm:w-24 rounded-full bg-border-subtle overflow-hidden"
+        role="progressbar"
+        aria-valuenow={Math.min(step, total)}
+        aria-valuemin={0}
+        aria-valuemax={total}
+      >
         <div
-          className="h-full bg-[linear-gradient(90deg,#FF40D8,#A64CFF)] transition-[width] duration-[var(--dur-base)] [transition-timing-function:var(--ease-out)]"
-          style={{ width: `${(step / total) * 100}%` }}
+          className="h-full bg-grad-brand transition-[width] duration-[var(--dur-base)] [transition-timing-function:var(--ease-out)]"
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>
   );
 }
 
-export function ConfidenceBadge({
-  confidence,
-}: {
-  confidence: "HIGH" | "MEDIUM" | "NEEDS_MORE_DATA";
-}) {
-  const styles = {
-    HIGH: "bg-[#E7F7F0] text-[#0A7A50]",
-    MEDIUM: "bg-[#FEF4E1] text-[#9A6400]",
-    NEEDS_MORE_DATA: "bg-[#FDE8EE] text-[#B01643]",
-  } as const;
-  const labels = {
-    HIGH: "HIGH",
-    MEDIUM: "MEDIUM",
-    NEEDS_MORE_DATA: "NEEDS MORE DATA",
-  } as const;
+const CONFIDENCE_STYLES: Record<Confidence, string> = {
+  HIGH: "bg-success-tint text-success-ink",
+  MEDIUM: "bg-warning-tint text-warning-ink",
+  NEEDS_MORE_DATA: "bg-danger-tint text-danger-ink",
+};
+
+export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 font-text font-semibold text-[12px] tracking-[0.04em] ${styles[confidence]}`}
+      className={`inline-flex items-center rounded-full px-3 py-1 font-text font-semibold text-[12px] tracking-[0.02em] ${CONFIDENCE_STYLES[confidence]}`}
     >
-      {labels[confidence]}
+      {CONFIDENCE_LABEL[confidence]}
     </span>
+  );
+}
+
+/** Small uppercase section marker used across both surfaces. */
+export function Eyebrow({
+  children,
+  tone = "pink",
+  className = "",
+  id,
+}: {
+  children: React.ReactNode;
+  tone?: "pink" | "pink-dark" | "muted";
+  className?: string;
+  id?: string;
+}) {
+  const tones = {
+    pink: "text-crost-pink",
+    "pink-dark": "text-crost-pink-700",
+    muted: "text-text-low",
+  } as const;
+  return (
+    <div
+      id={id}
+      className={`font-text font-semibold text-[11px] tracking-[0.18em] ${tones[tone]} ${className}`}
+    >
+      {children}
+    </div>
   );
 }

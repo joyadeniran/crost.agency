@@ -19,3 +19,12 @@ export function supabaseAdmin() {
     auth: { persistSession: false },
   });
 }
+
+/**
+ * Checked before touching the database so an unconfigured deployment returns a
+ * deliberate 503 with an actionable message, rather than a 500 from a thrown
+ * constructor that reads to the user as "the site is broken".
+ */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}

@@ -4,6 +4,18 @@ export type CacSource = "provided" | "derived" | "unavailable";
 
 export type Confidence = "HIGH" | "MEDIUM" | "NEEDS_MORE_DATA";
 
+/**
+ * The specific inputs the engine needed but didn't get. Returned so the UI and
+ * the emails can say precisely what's missing instead of rendering an em dash
+ * and leaving the prospect to guess.
+ */
+export type MissingInput =
+  | "cac"
+  | "monthlyAdSpend"
+  | "monthlyCustomersAcquired"
+  | "aovLtv"
+  | "grossMarginPct";
+
 /** Everything the diagnostic form can collect. All money fields are USD. */
 export interface DiagnosticInputs {
   monthlyAdSpend: number | null;
@@ -44,4 +56,12 @@ export interface DiagnosticResult {
   derivedMetrics: DerivedMetrics;
   outputs: DiagnosticOutputs;
   confidence: Confidence;
+  /**
+   * Whether the engine could actually price the stated target — i.e. produce a
+   * media figure. False means every downstream money number is null and the
+   * interface must say so rather than display placeholders.
+   */
+  priceable: boolean;
+  /** Inputs that would move this result forward, most useful first. */
+  missing: MissingInput[];
 }
